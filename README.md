@@ -4,9 +4,9 @@ This is a repo of my classwork for my parallel computing class during spring 202
 ## How to Run
 General command to compile and run
 ```console
-cc <file name>; ./a.exe
+cc -lm <file name>; ./a.exe
 ```
 Running a given example
 ```console
-cc given_examples/<file name>; ./a.exe
+cc -lm given_examples/<file name>; ./a.exe
 ```
