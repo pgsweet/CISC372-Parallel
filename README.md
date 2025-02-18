@@ -10,3 +10,7 @@ Running a given example
 ```console
 cc -lm given_examples/<file name>; ./a.exe
 ```
+Running a HW file
+```console
+cc -lm HW/<file name>; ./a.exe
+```
