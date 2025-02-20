@@ -17,6 +17,10 @@ Running a HW file
 ```console
 cc -lm -g HW/<file name>; ./a.exe
 ```
+Checking for memory leaks with valgrind
+```console
+valgrind --leak-check=yes ./a.exe
+```
 
 #### On Linux
 General command to compile and run
@@ -30,4 +34,8 @@ cc -lm -g given_examples/<file name>; ./a.out
 Running a HW file
 ```console
 cc -lm -g HW/<file name>; ./a.out
+```
+Checking for memory leaks with valgrind
+```console
+valgrind --leak-check=yes ./a.out
 ```
