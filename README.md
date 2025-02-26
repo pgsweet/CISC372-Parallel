@@ -51,11 +51,7 @@ mpiexec -n 4 ./a.out
 #### On cisc372 Server
 everything is same as before but,
 
-mpicc multithreading
-```
-mpicc -g -Wall <file name> && ./a.out
-```
-run with 4 threads
+run mpicc program with 4 threads
 ```
 srun -n 4 ./a.out
 ```
