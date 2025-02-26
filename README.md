@@ -1,9 +1,9 @@
 # Parallel Computing Work
 This is a repo of my classwork for my parallel computing class during spring 2025 at UD
 
-## How to Run
+# How to Run
 
-#### On Windows
+### On Windows
 
 General command to compile and run
 ```console
@@ -22,7 +22,7 @@ Checking for memory leaks with valgrind
 valgrind --leak-check=yes ./a.exe
 ```
 
-#### On Linux
+### On Linux
 General command to compile and run
 ```console
 cc -lm -g <file name>; ./a.out
@@ -48,7 +48,7 @@ run with 4 threads
 mpiexec -n 4 ./a.out
 ```
 
-#### On cisc372 Server
+### On cisc372 Server
 everything is same as before but,
 
 run mpicc program with 4 threads
