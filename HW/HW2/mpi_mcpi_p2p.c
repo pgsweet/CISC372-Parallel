@@ -63,7 +63,17 @@ double parallel_pi(int n, int comm_sz, int my_rank) {
     }
     
     /*** TODO 3: add code that correctly determines the overall count ***/
-    MPI_Reduce(&local_count, &count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (my_rank != 0) {
+        MPI_Send(&local_count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+    } 
+    else {
+        count = local_count;
+        int temp_count;
+        for (int src = 1; src < comm_sz; src++){
+            MPI_Recv(&temp_count, 1, MPI_INT, src, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            count += temp_count ;
+        }
+    }
 
     return (my_rank==0) ? (4.0*count/n) : 0.0;
 }
@@ -93,7 +103,14 @@ int main(int argc, char *argv[]) {
         }
     }
     /*** TODO 6: Add code that ensures that every process has the input value for n */
-    MPI_Bcast(&n, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+    if (my_rank == 0) {
+        for (int dest = 1; dest < comm_sz; dest++) {
+            MPI_Send(&n, 1, MPI_LONG, dest, 0, MPI_COMM_WORLD);
+        }
+    }
+    else {
+        MPI_Recv(&n, 1, MPI_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
 
     /* set a random seed */
     srand(1);
