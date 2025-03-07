@@ -54,6 +54,7 @@ double parallel_pi(int n, int comm_sz, int my_rank) {
     int local_n=n, local_count=0, count=0;
     
     /*** TODO 2: add code to determine the number of points that are handled by each process ***/
+    local_n = n / comm_sz;
 
     for (int i=0; i<local_n; i++) {
         /* generate to random numbers */
@@ -62,8 +63,9 @@ double parallel_pi(int n, int comm_sz, int my_rank) {
     }
     
     /*** TODO 3: add code that correctly determines the overall count ***/
+    MPI_Reduce(&local_count, &count, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    return 4.0*count/n;
+    return (my_rank==0) ? (4.0*count/n) : 0.0;
 }
 
 /* main reads the command line argument and outputs the approximate value of pi 
@@ -74,9 +76,12 @@ int main(int argc, char *argv[]) {
     double start, finish, elapsed_serial, elapsed_parallel;
 
 	/*** TODO 4: add code to set up the MPI execution environment ***/
+    MPI_Init(NULL, NULL);
 
     int comm_sz=1, my_rank=0;
     /*** TODO 5: add code to set comm_sz and my_rank to the appropriate values ***/
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     
     if (my_rank == 0) {
         /* Check command line arguments for correctness and read the parameters from argv */
@@ -88,6 +93,7 @@ int main(int argc, char *argv[]) {
         }
     }
     /*** TODO 6: Add code that ensures that every process has the input value for n */
+    MPI_Bcast(&n, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
     /* set a random seed */
     srand(1);
@@ -100,6 +106,7 @@ int main(int argc, char *argv[]) {
     elapsed_serial = finish - start;
 
 	/*** TODO 7: add code to synchronize the processes ***/
+    MPI_Barrier(MPI_COMM_WORLD);
 
     GET_TIME(start);
     pi = parallel_pi(n, comm_sz, my_rank);
@@ -118,6 +125,7 @@ int main(int argc, char *argv[]) {
     }
 
 	/*** TODO 8: don't forget to terminate the MPI execution environment */
+    MPI_Finalize();
 
     return 0;
 }
