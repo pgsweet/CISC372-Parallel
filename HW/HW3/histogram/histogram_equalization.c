@@ -17,16 +17,29 @@ void histogram_equalization(Image *srcImage, Image *destImage) {
     int new_gray_level[256] = { 0 };
  
     // Calculating frequency of occurrence for all pixel values
-    for (int row=0; row<srcImage->height; row++) {
-        for (int col=0; col<srcImage->width; col++) {
-            int index = Index(col, row, srcImage->width, 1, srcImage->bpp);
-            hist[srcImage->data[index]]++;
-        }      
+    #pragma omp parallel 
+    {
+        int local_hist[256] = {0};
+        #pragma omp for
+        for (int row=0; row<srcImage->height; row++) {
+            for (int col=0; col<srcImage->width; col++) {
+                int index = Index(col, row, srcImage->width, 1, srcImage->bpp);
+                local_hist[srcImage->data[index]]++;
+            }      
+        }
+
+        #pragma omp critical
+        {
+            for (int i = 0; i < 256; i++) {
+                hist[i] += local_hist[i];
+            }
+        }
     }
   
     // calculating cumulative frequency and new gray levels
     long total = srcImage->height*srcImage->width;
     long curr = 0;
+    #pragma omp parallel for reduction(+:curr)
     for (int i=0; i<256; i++) {
         // cumulative frequency
         curr += hist[i];
@@ -38,6 +51,7 @@ void histogram_equalization(Image *srcImage, Image *destImage) {
     }
 
     // performing histogram equalisation by mapping new gray levels
+    #pragma omp parallel for
     for (int row=0; row<srcImage->height; row++) {
         for (int pix=0; pix<srcImage->width; pix++) {
             int index = Index(pix, row, srcImage->width, 1, srcImage->bpp);
