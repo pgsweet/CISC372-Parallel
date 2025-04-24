@@ -19,20 +19,13 @@ void histogram_equalization(Image *srcImage, Image *destImage) {
     // Calculating frequency of occurrence for all pixel values
     #pragma omp parallel 
     {
-        int local_hist[256] = {0};
         #pragma omp for
         for (int row=0; row<srcImage->height; row++) {
             for (int col=0; col<srcImage->width; col++) {
                 int index = Index(col, row, srcImage->width, 1, srcImage->bpp);
-                local_hist[srcImage->data[index]]++;
+                #pragma omp atomic
+                hist[srcImage->data[index]]++;
             }      
-        }
-
-        #pragma omp critical
-        {
-            for (int i = 0; i < 256; i++) {
-                hist[i] += local_hist[i];
-            }
         }
     }
   
