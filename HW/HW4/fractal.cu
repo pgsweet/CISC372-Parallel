@@ -54,7 +54,7 @@ __global__ void Fractal_Kernel(unsigned char *pic, double xMid, double yMid, dou
   double x = cx;
   double y = cy;
 
-  int dept = 256;
+  int depth = 256;
   double x2 = x*x, y2 = y*y;
 
   while ((depth > 0) && ((x2 + y2) < 5.0)) {
@@ -86,13 +86,16 @@ int main(int argc, char *argv[]) {
   printf("Computing %d frames of %d by %d fractal\n", num_frames, width, height);
 
   /* allocate image array */
-  unsigned char *h_pic = malloc(num_frames * height * width * sizeof(unsigned char));
+  unsigned char *h_pic = (unsigned char*)malloc(num_frames * height * width * sizeof(unsigned char));
   unsigned char *d_pic;
   cudaMalloc(&d_pic, num_frames * width * height * sizeof(unsigned char));
 
+  double delta = Delta;
+  const double aspect_ratio = (double)width / (double)height;
+
   dim3 block(16,16);
   int th_per_blk = num_frames;
-  dim3 grid((width + bloc.x - 1) / block.x , (height + block.y - 1) / block.y);
+  dim3 grid((width + block.x - 1) / block.x , (height + block.y - 1) / block.y);
 
   /* start time */
   GET_TIME(start);
