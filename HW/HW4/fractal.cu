@@ -36,8 +36,35 @@ __shared__ static const double Delta = 0.001;
 __shared__ static const double xMid =  0.23701;
 __shared__ static const double yMid =  0.521;
 
-__global__ void Fractal_Kernel() {
+__global__ void Fractal_Kernel(int width, int height) {
+  const double aspect_ratio = (double)width/height;
 
+  int col = blockDim.x;
+  int row = blockDim.y;
+  int frame_num = threadIdx.x;
+
+  const double x0 = xMid - delta * aspect_ratio;
+  const double y0 = yMid - delta;
+  const double dy = 2.0 * delta / height;
+  const double cy = y0 + row * dy;
+  
+  const double cx = x0 + col * dx;
+  
+  double x = cx;
+  double y = cy;
+  int depth = 256;
+  
+  double x2, y2;
+
+  do {
+    x2 = x * x;
+    y2 = y * y;
+    y = 2 * x * y + cy;
+    x = x2 - y2 + cx;
+    depth--;
+  } while ((depth > 0) && ((x2 + y2) < 5.0));
+  
+  pic[frame_num * height * width + row * width + col] = (unsigned char)depth;
 }
 
 int main(int argc, char *argv[]) {
@@ -61,14 +88,15 @@ int main(int argc, char *argv[]) {
   /* start time */
   GET_TIME(start);
 
-  int th_per_blk = 1024;
-  int blk_ct = (n + th_per_blk - 1)/th_per_blk;
+  int th_per_blk = num_frames;
+  dim3 blk_ct = new dim3(width, height);
+
 // TODO
   Fractal_Kernel <<< blk_ct, th_per_blk >>>()
 
   /* compute frames */
-  const double aspect_ratio = (double)width/height;
-  double delta = Delta;
+  // const double aspect_ratio = (double)width/height;
+  // double delta = Delta;
   for (int frame = 0; frame < num_frames; frame++) {
 
     const double x0 = xMid - delta * aspect_ratio;
