@@ -32,9 +32,13 @@ Author: Martin Burtscher
 #include "timer.h"
 #include "fractal.h"
 
-static const double Delta = 0.001;
-static const double xMid =  0.23701;
-static const double yMid =  0.521;
+__shared__ static const double Delta = 0.001;
+__shared__ static const double xMid =  0.23701;
+__shared__ static const double yMid =  0.521;
+
+__global__ void Fractal_Kernel() {
+
+}
 
 int main(int argc, char *argv[]) {
   double start, end;
@@ -56,6 +60,11 @@ int main(int argc, char *argv[]) {
 
   /* start time */
   GET_TIME(start);
+
+  int th_per_blk = 1024;
+  int blk_ct = (n + th_per_blk - 1)/th_per_blk;
+// TODO
+  Fractal_Kernel <<< blk_ct, th_per_blk >>>()
 
   /* compute frames */
   const double aspect_ratio = (double)width/height;
