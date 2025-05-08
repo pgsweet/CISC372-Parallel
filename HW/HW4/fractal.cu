@@ -32,35 +32,33 @@ Author: Martin Burtscher
 #include "timer.h"
 #include "fractal.h"
 
-__shared__ static const double Delta = 0.001;
-__shared__ static const double xMid =  0.23701;
-__shared__ static const double yMid =  0.521;
+static const double Delta = 0.001;
+static const double xMid =  0.23701;
+static const double yMid =  0.521;
 
-__global__ void Fractal_Kernel(int width, int height) {
-  const double aspect_ratio = (double)width/height;
+__global__ void Fractal_Kernel(unsigned char *pic, double xMid, double yMid, double delta, double aspect_ratio, int width, int height, int frame) {
+  
+  int col = blockIdx.x * blockDim.x + threadIdx.x;
+  int row = blockIdx.y * blockDim.y + threadIdx.y;
 
-  int col = blockDim.x;
-  int row = blockDim.y;
-  int frame_num = threadIdx.x;
-
-  double delta = Delta * 
+  if (col >= width || row >= height) return;
 
   const double x0 = xMid - delta * aspect_ratio;
   const double y0 = yMid - delta;
   const double dx = 2.0 * delta * aspect_ratio / width;
   const double dy = 2.0 * delta / height;
-  const double cy = y0 + row * dy;
-  
-  const double cx = x0 + col * dx;
-  
+
+  double cx = x0 + col * dx;
+  double cy = y0 + row * dy;
+
   double x = cx;
   double y = cy;
-  int depth = 256;
-  
+
+  int dept = 256;
   double x2 = x*x, y2 = y*y;
 
   while ((depth > 0) && ((x2 + y2) < 5.0)) {
-    y = 2 * x * y + cy;
+    y = 2.0 * x * y + cy;
     x = x2 - y2 + cx;
 
     x2 = x * x;
@@ -68,8 +66,8 @@ __global__ void Fractal_Kernel(int width, int height) {
 
     depth--;
   }
-  
-  pic[frame_num * height * width + row * width + col] = (unsigned char)depth;
+
+  pic[frame * width * height + row * width + col] = (unsigned char)depth;
 }
 
 int main(int argc, char *argv[]) {
@@ -88,73 +86,41 @@ int main(int argc, char *argv[]) {
   printf("Computing %d frames of %d by %d fractal\n", num_frames, width, height);
 
   /* allocate image array */
-  unsigned char *pic = malloc(num_frames * height * width * sizeof(unsigned char));
+  unsigned char *h_pic = malloc(num_frames * height * width * sizeof(unsigned char));
+  unsigned char *d_pic;
+  cudaMalloc(&d_pic, num_frames * width * height * sizeof(unsigned char));
+
+  dim3 block(16,16);
+  int th_per_blk = num_frames;
+  dim3 grid((width + bloc.x - 1) / block.x , (height + block.y - 1) / block.y);
 
   /* start time */
   GET_TIME(start);
 
-  int th_per_blk = num_frames;
-  dim3 blk_ct = new dim3(width, height);
-
-// TODO
-  Fractal_Kernel <<< blk_ct, th_per_blk >>>()
-
-  /* compute frames */
-  // const double aspect_ratio = (double)width/height;
-  // double delta = Delta;
   for (int frame = 0; frame < num_frames; frame++) {
-
-    const double x0 = xMid - delta * aspect_ratio;
-    const double y0 = yMid - delta;
-    const double dx = 2.0 * delta * aspect_ratio / width;
-    const double dy = 2.0 * delta / height;
-    
-    for (int row = 0; row < height; row++) {
-
-      const double cy = y0 + row * dy;
-      
-      for (int col = 0; col < width; col++) {
-
-        const double cx = x0 + col * dx;
-        
-        double x = cx;
-        double y = cy;
-        int depth = 256;
-        
-        double x2, y2;
-        do {
-          x2 = x * x;
-          y2 = y * y;
-          y = 2 * x * y + cy;
-          x = x2 - y2 + cx;
-          depth--;
-        } while ((depth > 0) && ((x2 + y2) < 5.0));
-        
-        pic[frame * height * width + row * width + col] = (unsigned char)depth;
-      
-      }
-
-    }
-
+    Fractal_Kernel <<< grid, th_per_blk >>> (d_pic, xMid, yMid, delta, aspect_ratio, width, height, frame);
+    cudaDeviceSynchronize();
     delta *= 0.98;
-
   }
 
+  cudaMemcpy(h_pic, d_pic, num_frames * width * height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+  
   /* end time */
   GET_TIME(end);
   double elapsed = end - start;
-  printf("Serial compute time: %.4f s\n", elapsed);
+  printf("Parallel compute time: %.4f s\n", elapsed);
 
   /* write frames to BMP files */
   if ((width <= 320) && (num_frames <= 100)) { /* do not write if images large or many */
     for (int frame = 0; frame < num_frames; frame++) {
       char name[32];
       sprintf(name, "fractal%d.bmp", frame + 1000);
-      writeBMP(width, height, &pic[frame * height * width], name);
+      writeBMP(width, height, &h_pic[frame * height * width], name);
     }
   }
 
-  free(pic);
+  free(h_pic);
+  cudaFree(d_pic);
 
   return 0;
 } /* main */
