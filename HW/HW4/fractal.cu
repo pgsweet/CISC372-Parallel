@@ -45,6 +45,7 @@ __global__ void Fractal_Kernel(int width, int height) {
 
   const double x0 = xMid - delta * aspect_ratio;
   const double y0 = yMid - delta;
+  const double dx = 2.0 * delta * aspect_ratio / width;
   const double dy = 2.0 * delta / height;
   const double cy = y0 + row * dy;
   
