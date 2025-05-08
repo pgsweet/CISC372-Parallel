@@ -43,6 +43,8 @@ __global__ void Fractal_Kernel(int width, int height) {
   int row = blockDim.y;
   int frame_num = threadIdx.x;
 
+  double delta = Delta * 
+
   const double x0 = xMid - delta * aspect_ratio;
   const double y0 = yMid - delta;
   const double dx = 2.0 * delta * aspect_ratio / width;
@@ -55,15 +57,17 @@ __global__ void Fractal_Kernel(int width, int height) {
   double y = cy;
   int depth = 256;
   
-  double x2, y2;
+  double x2 = x*x, y2 = y*y;
 
-  do {
-    x2 = x * x;
-    y2 = y * y;
+  while ((depth > 0) && ((x2 + y2) < 5.0)) {
     y = 2 * x * y + cy;
     x = x2 - y2 + cx;
+
+    x2 = x * x;
+    y2 = y * y;
+
     depth--;
-  } while ((depth > 0) && ((x2 + y2) < 5.0));
+  }
   
   pic[frame_num * height * width + row * width + col] = (unsigned char)depth;
 }
