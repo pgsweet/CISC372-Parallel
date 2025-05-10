@@ -32,30 +32,30 @@ Author: Martin Burtscher
 #include "timer.h"
 #include "fractal.h"
 
-static const double Delta = 0.001;
-static const double xMid =  0.23701;
-static const double yMid =  0.521;
+static const float Delta = 0.001;
+static const float xMid =  0.23701;
+static const float yMid =  0.521;
 
-__global__ void Fractal_Kernel(unsigned char *pic, double xMid, double yMid, double delta, double aspect_ratio, int width, int height, int frame) {
+__global__ void Fractal_Kernel(unsigned char *pic, float xMid, float yMid, float delta, float aspect_ratio, int width, int height, int frame) {
   
   int col = (blockIdx.x * blockDim.x) + threadIdx.x;
   int row = (blockIdx.y * blockDim.y) + threadIdx.y;
 
   if (col >= width || row >= height) return;
 
-  const double x0 = xMid - delta * aspect_ratio;
-  const double y0 = yMid - delta;
-  const double dx = 2.0 * delta * aspect_ratio / width;
-  const double dy = 2.0 * delta / height;
+  const float x0 = xMid - delta * aspect_ratio;
+  const float y0 = yMid - delta;
+  const float dx = 2.0 * delta * aspect_ratio / width;
+  const float dy = 2.0 * delta / height;
 
-  double cx = x0 + col * dx;
-  double cy = y0 + row * dy;
+  float cx = x0 + col * dx;
+  float cy = y0 + row * dy;
 
-  double x = cx;
-  double y = cy;
+  float x = cx;
+  float y = cy;
 
   int depth = 256;
-  double x2 = x*x, y2 = y*y;
+  float x2 = x*x, y2 = y*y;
 
   while ((depth > 0) && ((x2 + y2) < 5.0)) {
     y = 2.0 * x * y + cy;
@@ -91,8 +91,8 @@ int main(int argc, char *argv[]) {
   unsigned char *d_pic;
   cudaMalloc(&d_pic, num_frames * width * height * sizeof(unsigned char));
 
-  double delta = Delta;
-  const double aspect_ratio = (double)width / (double)height;
+  float delta = Delta;
+  const float aspect_ratio = (float)width / (float)height;
 
   dim3 block(32,32);
   dim3 grid((width + block.x - 1) / block.x , (height + block.y - 1) / block.y);
